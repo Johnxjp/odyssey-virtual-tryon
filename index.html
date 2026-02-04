@@ -32,13 +32,17 @@
       border-radius: 4px;
       overflow: hidden;
       margin-bottom: 20px;
+      width: fit-content;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     video {
-      width: 100%;
-      max-height: 50vh;
+      width: 28.125vh;
+      min-height: 50vh;
       display: block;
       object-fit: contain;
+      margin: 0 auto;
     }
 
     .controls {
@@ -78,6 +82,47 @@
       font-size: 14px;
       color: #856404;
     }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .view-button {
+      aspect-ratio: 1;
+      padding: 0;
+      border: 2px solid #007bff;
+      border-radius: 8px;
+      background: white;
+      color: #007bff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .view-button:hover:not(:disabled) {
+      background: #007bff;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+    }
+
+    .view-button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .view-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      border-color: #ccc;
+      color: #999;
+    }
   </style>
 </head>
 
@@ -87,6 +132,13 @@
   <div class="container">
     <div class="video-container">
       <video id="video" autoplay playsinline muted></video>
+    </div>
+
+    <div class="button-grid">
+      <button class="view-button" id="frontBtn" disabled>Front</button>
+      <button class="view-button" id="backBtn" disabled>Back</button>
+      <button class="view-button" id="sideBtn" disabled>Side</button>
+      <button class="view-button" id="walkBtn" disabled>Walk</button>
     </div>
 
     <div class="controls">
@@ -117,6 +169,14 @@
     const statusEl = document.getElementById('status');
     const imageInput = document.getElementById('imageInput');
     const promptInput = document.getElementById('promptInput');
+    const frontBtn = document.getElementById('frontBtn');
+    const backBtn = document.getElementById('backBtn');
+    const sideBtn = document.getElementById('sideBtn');
+    const walkBtn = document.getElementById('walkBtn');
+
+    // ===== CLEAR INPUTS ON PAGE LOAD =====
+    imageInput.value = '';
+    promptInput.value = '';
 
     // ===== CREATE CLIENT =====
     const client = new Odyssey({ apiKey: API_KEY });
@@ -126,6 +186,14 @@
       if (isConnected && hasImage && !isStreaming && uploadedImage) {
         startStream();
       }
+    }
+
+    // ===== BUTTON STATE MANAGEMENT =====
+    function updateButtonStates() {
+      const buttons = [frontBtn, backBtn, sideBtn, walkBtn];
+      buttons.forEach(btn => {
+        btn.disabled = !isStreaming;
+      });
     }
 
     async function startStream() {
@@ -213,6 +281,31 @@
       }
     });
 
+    // ===== VIEW BUTTON HANDLERS =====
+    async function sendViewPrompt(prompt) {
+      try {
+        console.log('Sending view prompt:', prompt);
+        statusEl.textContent = 'Changing view...';
+
+        await client.interact({
+          prompt: prompt
+        });
+
+        console.log('View prompt sent successfully');
+        statusEl.textContent = 'View changed';
+
+      } catch (error) {
+        console.error('Failed to send view prompt:', error);
+        alert(`Failed to change view: ${error.message}`);
+        statusEl.textContent = 'Error changing view';
+      }
+    }
+
+    frontBtn.addEventListener('click', () => sendViewPrompt('person faces the front'));
+    backBtn.addEventListener('click', () => sendViewPrompt('person faces the back'));
+    sideBtn.addEventListener('click', () => sendViewPrompt('person faces the side'));
+    walkBtn.addEventListener('click', () => sendViewPrompt('person is walking'));
+
     // ===== CONNECTION INITIALIZATION =====
     (async () => {
       try {
@@ -248,12 +341,14 @@
           onStreamStarted: (streamId) => {
             console.log('Stream started, ID:', streamId);
             isStreaming = true;
+            updateButtonStates();
             statusEl.textContent = `Streaming (ID: ${streamId.substring(0, 8)}...)`;
           },
 
           onStreamEnded: () => {
             console.log('Stream ended');
             isStreaming = false;
+            updateButtonStates();
             statusEl.textContent = 'Stream ended';
           },
 
