@@ -26,15 +26,46 @@
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
+    .video-wrapper {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
     .video-container {
       position: relative;
       background: #000;
       border-radius: 4px;
       overflow: hidden;
-      margin-bottom: 20px;
-      width: fit-content;
-      margin-left: auto;
-      margin-right: auto;
+    }
+
+    .side-button {
+      width: 100px;
+      height: 100px;
+      padding: 10px;
+      border: 2px solid #dc3545;
+      border-radius: 8px;
+      background: white;
+      color: #dc3545;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: normal;
+      word-wrap: break-word;
+    }
+
+    .side-button:hover {
+      background: #dc3545;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+    }
+
+    .side-button:active {
+      transform: translateY(0);
     }
 
     video {
@@ -123,15 +154,64 @@
       border-color: #ccc;
       color: #999;
     }
+
+    .model-selection {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .model-button {
+      border: 3px solid transparent;
+      border-radius: 12px;
+      padding: 10px;
+      background: #f8f8f8;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .model-button:hover {
+      border-color: #007bff;
+      transform: scale(1.02);
+      box-shadow: 0 8px 16px rgba(0, 123, 255, 0.2);
+    }
+
+    .model-button:active {
+      transform: scale(0.98);
+    }
+
+    .model-button img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      display: block;
+    }
   </style>
 </head>
 
 <body>
   <h1>Odyssey Virtual Try-On</h1>
 
-  <div class="container">
-    <div class="video-container">
-      <video id="video" autoplay playsinline muted></video>
+  <!-- Start Screen -->
+  <div id="startScreen" class="container">
+    <div class="model-selection">
+      <button class="model-button" id="femaleModelBtn">
+        <img src="female_model.png" alt="Female Model">
+      </button>
+      <button class="model-button" id="maleModelBtn">
+        <img src="male_model.png" alt="Male Model">
+      </button>
+    </div>
+  </div>
+
+  <!-- Video Screen -->
+  <div id="videoScreen" class="container" style="display: none;">
+    <div class="video-wrapper">
+      <button class="side-button" id="redShirtBtn">red shirt</button>
+      <div class="video-container">
+        <video id="video" autoplay playsinline muted></video>
+      </div>
     </div>
 
     <div class="button-grid">
@@ -142,10 +222,6 @@
     </div>
 
     <div class="controls">
-      <div id="status">Initializing...</div>
-
-      <input type="file" id="imageInput" accept="image/*" aria-label="Upload photo">
-
       <input type="text" id="promptInput" placeholder="Custom prompt (optional, e.g., 'Person trying on a red jacket')"
         aria-label="Custom prompt">
     </div>
@@ -166,16 +242,18 @@
 
     // ===== DOM REFERENCES =====
     const videoEl = document.getElementById('video');
-    const statusEl = document.getElementById('status');
-    const imageInput = document.getElementById('imageInput');
     const promptInput = document.getElementById('promptInput');
     const frontBtn = document.getElementById('frontBtn');
     const backBtn = document.getElementById('backBtn');
     const sideBtn = document.getElementById('sideBtn');
     const walkBtn = document.getElementById('walkBtn');
+    const startScreen = document.getElementById('startScreen');
+    const videoScreen = document.getElementById('videoScreen');
+    const femaleModelBtn = document.getElementById('femaleModelBtn');
+    const maleModelBtn = document.getElementById('maleModelBtn');
+    const redShirtBtn = document.getElementById('redShirtBtn');
 
     // ===== CLEAR INPUTS ON PAGE LOAD =====
-    imageInput.value = '';
     promptInput.value = '';
 
     // ===== CREATE CLIENT =====
@@ -198,10 +276,9 @@
 
     async function startStream() {
       try {
-        const prompt = promptInput.value.trim() || "Person trying on the outfit";
+        const prompt = promptInput.value.trim() || "Person standing";
 
         console.log('Starting stream with prompt:', prompt);
-        statusEl.textContent = 'Starting stream...';
 
         const streamId = await client.startStream({
           prompt: prompt,
@@ -213,36 +290,110 @@
       } catch (error) {
         console.error('Failed to start stream:', error);
         alert(`Failed to start stream: ${error.message}`);
-        statusEl.textContent = 'Error starting stream';
       }
     }
 
-    // ===== FILE INPUT HANDLER =====
-    imageInput.addEventListener('change', (event) => {
-      const file = event.target.files[0];
+    // ===== MODEL SELECTION HANDLERS =====
+    async function loadImageAsFile(imagePath) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
 
-      if (!file) {
-        return;
+        img.onload = () => {
+          // Create canvas and draw image
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+
+          // Convert canvas to blob
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const filename = imagePath.split('/').pop();
+              const file = new File([blob], filename, { type: blob.type });
+              resolve(file);
+            } else {
+              reject(new Error('Failed to convert image to blob'));
+            }
+          }, 'image/png');
+        };
+
+        img.onerror = () => {
+          reject(new Error('Failed to load image'));
+        };
+
+        img.src = imagePath;
+      });
+    }
+
+    async function selectModel(modelPath, modelName) {
+      try {
+        // Load the model image as a File
+        const file = await loadImageAsFile(modelPath);
+
+        // Store the file and update state
+        uploadedImage = file;
+        hasImage = true;
+
+        console.log('Model selected:', modelName, `(${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+
+        // Switch to video screen
+        startScreen.style.display = 'none';
+        videoScreen.style.display = 'block';
+
+        // Try to auto-start if connected
+        checkAutoStart();
+
+      } catch (error) {
+        console.error('Failed to select model:', error);
+        alert(`Failed to load model: ${error.message}`);
       }
+    }
 
-      // Validate file size (max 25MB)
-      const maxSize = 25 * 1024 * 1024; // 25MB in bytes
-      if (file.size > maxSize) {
-        alert('File too large. Maximum file size is 25MB.');
-        imageInput.value = ''; // Clear the input
-        return;
+    femaleModelBtn.addEventListener('click', () => selectModel('female_model.png', 'Female Model'));
+    maleModelBtn.addEventListener('click', () => selectModel('male_model.png', 'Male Model'));
+
+    // ===== RED SHIRT BUTTON HANDLER =====
+    async function restartWithRedShirt() {
+      try {
+        console.log('Loading female_model_red.png...');
+
+        // Load the red shirt model image
+        const file = await loadImageAsFile('female_model_red.png');
+
+        // Update the uploaded image
+        uploadedImage = file;
+        hasImage = true;
+
+        console.log('Red shirt model loaded:', `(${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+
+        // END THE CURRENT STREAM FIRST
+        if (isStreaming) {
+          console.log('Ending current stream...');
+          await client.endStream();
+          console.log('Current stream ended');
+        }
+
+        // Now start the new stream with red shirt prompt
+        const prompt = "Person wearing a red shirt";
+        console.log('Starting new stream with prompt:', prompt);
+
+        const streamId = await client.startStream({
+          prompt: prompt,
+          portrait: true,
+          image: uploadedImage
+        });
+
+        console.log('Stream restarted with ID:', streamId);
+
+      } catch (error) {
+        console.error('Failed to restart with red shirt:', error);
+        alert(`Failed to load red shirt: ${error.message}`);
       }
+    }
 
-      // Store the file and update state
-      uploadedImage = file;
-      hasImage = true;
-
-      console.log('Image uploaded:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-      statusEl.textContent = `Image loaded: ${file.name}`;
-
-      // Try to auto-start if connected
-      checkAutoStart();
-    });
+    redShirtBtn.addEventListener('click', restartWithRedShirt);
 
     // ===== PROMPT INPUT HANDLER =====
     promptInput.addEventListener('keydown', async (event) => {
@@ -263,20 +414,17 @@
 
         try {
           console.log('Sending interact prompt:', prompt);
-          statusEl.textContent = 'Sending prompt...';
 
           await client.interact({
             prompt: prompt
           });
 
           console.log('Prompt sent successfully');
-          statusEl.textContent = 'Prompt sent';
           promptInput.value = ''; // Clear the input
 
         } catch (error) {
           console.error('Failed to send prompt:', error);
           alert(`Failed to send prompt: ${error.message}`);
-          statusEl.textContent = 'Error sending prompt';
         }
       }
     });
@@ -285,19 +433,16 @@
     async function sendViewPrompt(prompt) {
       try {
         console.log('Sending view prompt:', prompt);
-        statusEl.textContent = 'Changing view...';
 
         await client.interact({
           prompt: prompt
         });
 
         console.log('View prompt sent successfully');
-        statusEl.textContent = 'View changed';
 
       } catch (error) {
         console.error('Failed to send view prompt:', error);
         alert(`Failed to change view: ${error.message}`);
-        statusEl.textContent = 'Error changing view';
       }
     }
 
@@ -316,7 +461,6 @@
             console.log('Connected! Media stream received');
             videoEl.srcObject = mediaStream;
             isConnected = true;
-            statusEl.textContent = 'Connected - Ready to upload image';
 
             // Try to auto-start if image already uploaded
             checkAutoStart();
@@ -324,55 +468,33 @@
 
           onStatusChange: (status, message) => {
             console.log('Status change:', status, message);
-
-            // Map status to user-friendly text
-            const statusText = {
-              'authenticating': 'Authenticating...',
-              'connecting': 'Connecting...',
-              'reconnecting': 'Reconnecting...',
-              'connected': 'Connected',
-              'disconnected': 'Disconnected',
-              'failed': 'Connection failed'
-            };
-
-            statusEl.textContent = statusText[status] || status;
           },
 
           onStreamStarted: (streamId) => {
             console.log('Stream started, ID:', streamId);
             isStreaming = true;
             updateButtonStates();
-            statusEl.textContent = `Streaming (ID: ${streamId.substring(0, 8)}...)`;
           },
 
           onStreamEnded: () => {
             console.log('Stream ended');
             isStreaming = false;
             updateButtonStates();
-            statusEl.textContent = 'Stream ended';
           },
 
           onError: (error, fatal) => {
             console.error('Error:', error.message, 'Fatal:', fatal);
             alert(`Error: ${error.message}`);
-
-            if (fatal) {
-              statusEl.textContent = 'Fatal error - please reload';
-            } else {
-              statusEl.textContent = `Error: ${error.message}`;
-            }
           },
 
           onStreamError: (reason, message) => {
             console.error('Stream error:', reason, message);
             alert(`Stream error: ${message}`);
-            statusEl.textContent = `Stream error: ${reason}`;
           }
         });
 
       } catch (error) {
         console.error('Connection failed:', error);
-        statusEl.textContent = `Connection failed: ${error.message}`;
         alert(`Failed to connect: ${error.message}`);
       }
     })();
