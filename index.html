@@ -36,7 +36,9 @@
 
     video {
       width: 100%;
+      max-height: 50vh;
       display: block;
+      object-fit: contain;
     }
 
     .controls {
@@ -94,11 +96,6 @@
 
       <input type="text" id="promptInput" placeholder="Custom prompt (optional, e.g., 'Person trying on a red jacket')"
         aria-label="Custom prompt">
-    </div>
-
-    <div class="note">
-      <strong>Note:</strong> You must edit the API_KEY constant in this HTML file with your actual Odyssey API key.
-      Upload a portrait photo to automatically start the virtual try-on stream.
     </div>
   </div>
 
@@ -177,6 +174,43 @@
 
       // Try to auto-start if connected
       checkAutoStart();
+    });
+
+    // ===== PROMPT INPUT HANDLER =====
+    promptInput.addEventListener('keydown', async (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+
+        const prompt = promptInput.value.trim();
+
+        if (!prompt) {
+          alert('Please enter a prompt');
+          return;
+        }
+
+        if (!isStreaming) {
+          alert('No active stream. Please upload an image first.');
+          return;
+        }
+
+        try {
+          console.log('Sending interact prompt:', prompt);
+          statusEl.textContent = 'Sending prompt...';
+
+          await client.interact({
+            prompt: prompt
+          });
+
+          console.log('Prompt sent successfully');
+          statusEl.textContent = 'Prompt sent';
+          promptInput.value = ''; // Clear the input
+
+        } catch (error) {
+          console.error('Failed to send prompt:', error);
+          alert(`Failed to send prompt: ${error.message}`);
+          statusEl.textContent = 'Error sending prompt';
+        }
+      }
     });
 
     // ===== CONNECTION INITIALIZATION =====
