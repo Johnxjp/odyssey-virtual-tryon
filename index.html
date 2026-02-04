@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Odyssey Virtual Try-On</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    .container {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .video-container {
+      position: relative;
+      background: #000;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    video {
+      width: 100%;
+      display: block;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    input[type="file"],
+    input[type="text"] {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #status {
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: 500;
+      color: #666;
+    }
+
+    .note {
+      margin-top: 20px;
+      padding: 10px;
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #856404;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Odyssey Virtual Try-On</h1>
+
+  <div class="container">
+    <div class="video-container">
+      <video id="video" autoplay playsinline muted></video>
+    </div>
+
+    <div class="controls">
+      <div id="status">Initializing...</div>
+
+      <input type="file" id="imageInput" accept="image/*" aria-label="Upload photo">
+
+      <input type="text" id="promptInput" placeholder="Custom prompt (optional, e.g., 'Person trying on a red jacket')"
+        aria-label="Custom prompt">
+    </div>
+
+    <div class="note">
+      <strong>Note:</strong> You must edit the API_KEY constant in this HTML file with your actual Odyssey API key.
+      Upload a portrait photo to automatically start the virtual try-on stream.
+    </div>
+  </div>
+
+  <script type="module">
+    import { Odyssey } from 'https://esm.sh/@odysseyml/odyssey@1.0.0';
+
+    // ===== CONFIGURATION =====
+    // Replace this with your actual Odyssey API key
+    const API_KEY = 'ody_sjVzTgXISZa3HdoaCBHepQsy8UrKc6Rz';
+
+    // ===== STATE VARIABLES =====
+    let isConnected = false;
+    let hasImage = false;
+    let uploadedImage = null;
+    let isStreaming = false;
+
+    // ===== DOM REFERENCES =====
+    const videoEl = document.getElementById('video');
+    const statusEl = document.getElementById('status');
+    const imageInput = document.getElementById('imageInput');
+    const promptInput = document.getElementById('promptInput');
+
+    // ===== CREATE CLIENT =====
+    const client = new Odyssey({ apiKey: API_KEY });
+
+    // ===== AUTO-START LOGIC =====
+    function checkAutoStart() {
+      if (isConnected && hasImage && !isStreaming && uploadedImage) {
+        startStream();
+      }
+    }
+
+    async function startStream() {
+      try {
+        const prompt = promptInput.value.trim() || "Person trying on the outfit";
+
+        console.log('Starting stream with prompt:', prompt);
+        statusEl.textContent = 'Starting stream...';
+
+        const streamId = await client.startStream({
+          prompt: prompt,
+          portrait: true,
+          image: uploadedImage
+        });
+
+        console.log('Stream started with ID:', streamId);
+      } catch (error) {
+        console.error('Failed to start stream:', error);
+        alert(`Failed to start stream: ${error.message}`);
+        statusEl.textContent = 'Error starting stream';
+      }
+    }
+
+    // ===== FILE INPUT HANDLER =====
+    imageInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+
+      if (!file) {
+        return;
+      }
+
+      // Validate file size (max 25MB)
+      const maxSize = 25 * 1024 * 1024; // 25MB in bytes
+      if (file.size > maxSize) {
+        alert('File too large. Maximum file size is 25MB.');
+        imageInput.value = ''; // Clear the input
+        return;
+      }
+
+      // Store the file and update state
+      uploadedImage = file;
+      hasImage = true;
+
+      console.log('Image uploaded:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+      statusEl.textContent = `Image loaded: ${file.name}`;
+
+      // Try to auto-start if connected
+      checkAutoStart();
+    });
+
+    // ===== CONNECTION INITIALIZATION =====
+    (async () => {
+      try {
+        console.log('Connecting to Odyssey...');
+
+        await client.connect({
+          onConnected: (mediaStream) => {
+            console.log('Connected! Media stream received');
+            videoEl.srcObject = mediaStream;
+            isConnected = true;
+            statusEl.textContent = 'Connected - Ready to upload image';
+
+            // Try to auto-start if image already uploaded
+            checkAutoStart();
+          },
+
+          onStatusChange: (status, message) => {
+            console.log('Status change:', status, message);
+
+            // Map status to user-friendly text
+            const statusText = {
+              'authenticating': 'Authenticating...',
+              'connecting': 'Connecting...',
+              'reconnecting': 'Reconnecting...',
+              'connected': 'Connected',
+              'disconnected': 'Disconnected',
+              'failed': 'Connection failed'
+            };
+
+            statusEl.textContent = statusText[status] || status;
+          },
+
+          onStreamStarted: (streamId) => {
+            console.log('Stream started, ID:', streamId);
+            isStreaming = true;
+            statusEl.textContent = `Streaming (ID: ${streamId.substring(0, 8)}...)`;
+          },
+
+          onStreamEnded: () => {
+            console.log('Stream ended');
+            isStreaming = false;
+            statusEl.textContent = 'Stream ended';
+          },
+
+          onError: (error, fatal) => {
+            console.error('Error:', error.message, 'Fatal:', fatal);
+            alert(`Error: ${error.message}`);
+
+            if (fatal) {
+              statusEl.textContent = 'Fatal error - please reload';
+            } else {
+              statusEl.textContent = `Error: ${error.message}`;
+            }
+          },
+
+          onStreamError: (reason, message) => {
+            console.error('Stream error:', reason, message);
+            alert(`Stream error: ${message}`);
+            statusEl.textContent = `Stream error: ${reason}`;
+          }
+        });
+
+      } catch (error) {
+        console.error('Connection failed:', error);
+        statusEl.textContent = `Connection failed: ${error.message}`;
+        alert(`Failed to connect: ${error.message}`);
+      }
+    })();
+  </script>
+</body>
+
+</html>
