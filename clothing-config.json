@@ -1,11 +1,19 @@
 {
   "female": {
-    "shirts": [
+    "hats": [
       {
-        "file": "./assets/female/female_model_red.png",
-        "prompt": "Person wearing a red shirt"
+        "file": "./assets/female/hats/black_baseball_cap.png",
+        "prompt": "woman is wearing a black baseball hat. hat facing forward"
       }
     ],
+    "tops": [
+      {
+        "file": "./assets/female/female_model_red.png",
+        "prompt": "woman is wearing a red shirt"
+      }
+    ],
+    "trousers": [],
+    "dresses": [],
     "shoes": [
       {
         "file": "./assets/female/shoes/yellow_stilettos.png",
@@ -17,12 +25,22 @@
       },
       {
         "file": "./assets/female/shoes/sandals.png",
-        "prompt": "woman is wearing female beige sandals"
+        "prompt": "woman is wearing female beige open-top sandals"
       }
-    ]
+    ],
+    "accessories": []
   },
   "male": {
-    "shirts": [],
-    "shoes": []
+    "hats": [
+      {
+        "file": "./assets/male/hats/black_baseball_cap.png",
+        "prompt": "man is wearing a black baseball hat. hat facing forward"
+      }
+    ],
+    "jackets": [],
+    "tops": [],
+    "trousers": [],
+    "shoes": [],
+    "accessories": []
   }
 }

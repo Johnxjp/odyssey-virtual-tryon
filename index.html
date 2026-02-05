@@ -195,43 +195,59 @@
     .left-buttons {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      align-items: center;
+      gap: 20px;
+      align-items: flex-start;
+      padding: 10px;
+      max-height: 80vh;
+      overflow-y: auto;
     }
 
-    .shoe-buttons {
+    .clothing-category {
+      width: 100%;
+    }
+
+    .category-header {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+      text-transform: capitalize;
+      padding-bottom: 4px;
+    }
+
+    .clothing-items {
       display: flex;
       flex-direction: row;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
-    .shoe-button {
+    .clothing-button {
       border: none;
       border-radius: 8px;
       padding: 0;
       background: transparent;
       cursor: pointer;
       transition: all 0.3s;
-      width: 80px;
-      height: 80px;
+      width: 70px;
+      height: 70px;
       overflow: hidden;
     }
 
-    .shoe-button:hover {
-      border-color: #007bff;
-      transform: scale(1.05);
+    .clothing-button:hover {
+      transform: scale(1.1);
       box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
     }
 
-    .shoe-button:active {
+    .clothing-button:active {
       transform: scale(0.95);
     }
 
-    .shoe-button img {
+    .clothing-button img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      border-radius: 4px;
+      border-radius: 6px;
       display: block;
     }
   </style>
@@ -256,19 +272,8 @@
   <div id="videoScreen" class="container" style="display: none;">
     <div class="video-wrapper">
       <!-- Left Column: Clothing Buttons -->
-      <div class="left-buttons">
-        <button class="side-button" id="redShirtBtn">red shirt</button>
-        <div class="shoe-buttons">
-          <button class="shoe-button" id="yellowStilettoBtn">
-            <img src="./assets/female/shoes/yellow_stilettos.png" alt="Yellow Stilettos">
-          </button>
-          <button class="shoe-button" id="blackBootsBtn">
-            <img src="./assets/female/shoes/black_boots.png" alt="Black Boots">
-          </button>
-          <button class="shoe-button" id="sandalsBtn">
-            <img src="./assets/female/shoes/sandals.png" alt="Sandals">
-          </button>
-        </div>
+      <div class="left-buttons" id="clothingGrid">
+        <!-- Dynamically populated from clothing-config.json -->
       </div>
 
       <!-- Right Column: Video and Movement Controls -->
@@ -303,6 +308,8 @@
     let hasImage = false;
     let uploadedImage = null;
     let isStreaming = false;
+    let selectedGender = 'female';
+    let clothingConfig = null;
 
     // ===== DOM REFERENCES =====
     const videoEl = document.getElementById('video');
@@ -315,10 +322,7 @@
     const videoScreen = document.getElementById('videoScreen');
     const femaleModelBtn = document.getElementById('femaleModelBtn');
     const maleModelBtn = document.getElementById('maleModelBtn');
-    const redShirtBtn = document.getElementById('redShirtBtn');
-    const yellowStilettoBtn = document.getElementById('yellowStilettoBtn');
-    const blackBootsBtn = document.getElementById('blackBootsBtn');
-    const sandalsBtn = document.getElementById('sandalsBtn');
+    const clothingGrid = document.getElementById('clothingGrid');
 
     // ===== CLEAR INPUTS ON PAGE LOAD =====
     promptInput.value = '';
@@ -394,8 +398,95 @@
       });
     }
 
+    // ===== LOAD CLOTHING CONFIG =====
+    async function loadClothingConfig() {
+      try {
+        const response = await fetch('./clothing-config.json');
+        clothingConfig = await response.json();
+        console.log('Clothing config loaded:', clothingConfig);
+      } catch (error) {
+        console.error('Failed to load clothing config:', error);
+      }
+    }
+
+    // ===== BUILD CLOTHING GRID =====
+    function buildClothingGrid(gender) {
+      if (!clothingConfig || !clothingConfig[gender]) {
+        console.warn('No clothing config for gender:', gender);
+        return;
+      }
+
+      clothingGrid.innerHTML = '';
+      const genderConfig = clothingConfig[gender];
+
+      // Iterate through each clothing category
+      for (const [category, items] of Object.entries(genderConfig)) {
+        // Create category section
+        const categoryDiv = document.createElement('div');
+        categoryDiv.className = 'clothing-category';
+
+        // Create category header
+        const header = document.createElement('div');
+        header.className = 'category-header';
+        header.textContent = category;
+        categoryDiv.appendChild(header);
+
+        // Create items container (even if empty)
+        const itemsDiv = document.createElement('div');
+        itemsDiv.className = 'clothing-items';
+
+        // Create button for each item (if any)
+        if (items && items.length > 0) {
+          items.forEach((item, index) => {
+            const button = document.createElement('button');
+            button.className = 'clothing-button';
+
+            const img = document.createElement('img');
+            img.src = item.file;
+            img.alt = `${category} ${index + 1}`;
+
+            button.appendChild(img);
+
+            // Add click handler
+            button.addEventListener('click', () => applyClothing(item));
+
+            itemsDiv.appendChild(button);
+          });
+        }
+
+        categoryDiv.appendChild(itemsDiv);
+        clothingGrid.appendChild(categoryDiv);
+      }
+    }
+
+    // ===== APPLY CLOTHING =====
+    async function applyClothing(item) {
+      try {
+        if (!isStreaming) {
+          console.warn('No active stream to modify');
+          alert('Please start a stream first');
+          return;
+        }
+
+        console.log('Applying clothing:', item.prompt);
+
+        await client.interact({
+          prompt: item.prompt
+        });
+
+        console.log('Clothing applied successfully');
+
+      } catch (error) {
+        console.error('Failed to apply clothing:', error);
+        alert(`Failed to apply clothing: ${error.message}`);
+      }
+    }
+
     async function selectModel(modelPath, modelName) {
       try {
+        // Determine gender from model name
+        selectedGender = modelName.toLowerCase().includes('female') ? 'female' : 'male';
+
         // Load the model image as a File
         const file = await loadImageAsFile(modelPath);
 
@@ -404,6 +495,9 @@
         hasImage = true;
 
         console.log('Model selected:', modelName, `(${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+
+        // Build clothing grid for selected gender
+        buildClothingGrid(selectedGender);
 
         // Switch to video screen
         startScreen.style.display = 'none';
@@ -420,90 +514,6 @@
 
     femaleModelBtn.addEventListener('click', () => selectModel('./assets/female/female_model.png', 'Female Model'));
     maleModelBtn.addEventListener('click', () => selectModel('./assets/male/male_model.png', 'Male Model'));
-
-    // ===== RED SHIRT BUTTON HANDLER =====
-    async function restartWithRedShirt() {
-      try {
-        console.log('Loading female_model_red.png...');
-
-        // Load the red shirt model image
-        const file = await loadImageAsFile('./assets/female/female_model_red.png');
-
-        // Update the uploaded image
-        uploadedImage = file;
-        hasImage = true;
-
-        console.log('Red shirt model loaded:', `(${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-
-        // END THE CURRENT STREAM FIRST
-        if (isStreaming) {
-          console.log('Ending current stream...');
-          await client.endStream();
-          console.log('Current stream ended');
-        }
-
-        // Now start the new stream with red shirt prompt
-        const prompt = "Person wearing a red shirt";
-        console.log('Starting new stream with prompt:', prompt);
-
-        const streamId = await client.startStream({
-          prompt: prompt,
-          portrait: true,
-          image: uploadedImage
-        });
-
-        console.log('Stream restarted with ID:', streamId);
-
-      } catch (error) {
-        console.error('Failed to restart with red shirt:', error);
-        alert(`Failed to load red shirt: ${error.message}`);
-      }
-    }
-
-    redShirtBtn.addEventListener('click', restartWithRedShirt);
-
-    // ===== SHOE BUTTON HANDLERS =====
-    async function changeShoes(shoesConfig) {
-      try {
-        console.log(`Loading shoe image: ${shoesConfig.file}...`);
-
-        // For shoes, we use interact() instead of restarting the stream
-        // This modifies the current stream rather than loading a new base image
-        if (!isStreaming) {
-          console.warn('No active stream to modify');
-          alert('Please start a stream first before changing shoes');
-          return;
-        }
-
-        console.log('Sending shoes prompt:', shoesConfig.prompt);
-
-        await client.interact({
-          prompt: shoesConfig.prompt
-        });
-
-        console.log('Shoes changed successfully');
-
-      } catch (error) {
-        console.error('Failed to change shoes:', error);
-        alert(`Failed to change shoes: ${error.message}`);
-      }
-    }
-
-    // Shoe button event listeners with prompts from config
-    yellowStilettoBtn.addEventListener('click', () => changeShoes({
-      file: './assets/female/shoes/yellow_stilettos.png',
-      prompt: 'woman is wearing yellow stilettos on both feet'
-    }));
-
-    blackBootsBtn.addEventListener('click', () => changeShoes({
-      file: './assets/female/shoes/black_boots.png',
-      prompt: 'woman is wearing black high ankle boots on both feet'
-    }));
-
-    sandalsBtn.addEventListener('click', () => changeShoes({
-      file: './assets/female/shoes/sandals.png',
-      prompt: 'woman is wearing female flat beige sandals on both feet'
-    }));
 
     // ===== PROMPT INPUT HANDLER =====
     promptInput.addEventListener('keydown', async (event) => {
@@ -564,6 +574,9 @@
     // ===== CONNECTION INITIALIZATION =====
     (async () => {
       try {
+        // Load clothing configuration
+        await loadClothingConfig();
+
         console.log('Connecting to Odyssey...');
 
         await client.connect({
