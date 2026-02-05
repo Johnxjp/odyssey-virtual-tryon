@@ -330,9 +330,8 @@
     import { Odyssey } from 'https://esm.sh/@odysseyml/odyssey@1.0.0';
 
     // ===== CONFIGURATION =====
-    // Replace this with your actual Odyssey API key
-    const API_KEY = 'ody_sjVzTgXISZa3HdoaCBHepQsy8UrKc6Rz';
-    // const API_KEY = 'ody_';
+    // API key injected during build process from ODYSSEY_API_KEY environment variable
+    const API_KEY = 'ODYSSEY_API_KEY_PLACEHOLDER';
 
     // ===== STATE VARIABLES =====
     let isConnected = false;

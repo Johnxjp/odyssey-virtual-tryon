@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: odyssey-virtual-tryon
+    env: static
+    buildCommand: python3 build.py
+    staticPublishPath: ./public
+    envVars:
+      - key: ODYSSEY_API_KEY
+        sync: false
