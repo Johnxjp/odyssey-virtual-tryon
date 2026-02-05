@@ -3,23 +3,20 @@ name: odyssey-sdk
 description: Explains how to use the Odyssey Javascript SDK.  
 ---
 
+## Summary
 
-# Odyssey SDK Guide for Virtual Try-On MVP
+This guide covered the essential concepts for building a virtual try-on MVP with the Odyssey SDK:
 
-## Table of Contents
-- [Overview](#overview)
-- [Installation](#installation)
-- [Core Concepts](#core-concepts)
-- [Authentication](#authentication)
-- [The Odyssey Class](#the-odyssey-class)
-- [React Integration](#react-integration)
-- [Connection Lifecycle](#connection-lifecycle)
-- [Stream Operations](#stream-operations)
-- [Image-to-Video Capabilities](#image-to-video-capabilities)
-- [Event Handling](#event-handling)
-- [Recordings](#recordings)
-- [TypeScript Types](#typescript-types)
-- [Practical Examples](#practical-examples)
+1. **Installation & Setup** - Installing the package and configuring authentication
+2. **Core Architecture** - Understanding the WebRTC-based streaming model
+3. **Odyssey Class** - The main interface for all operations
+4. **React Integration** - Using the `useOdyssey` hook for React apps
+5. **Connection Lifecycle** - Managing connection states and transitions
+6. **Stream Operations** - Starting, interacting with, and ending streams
+7. **Image-to-Video** - Essential for virtual try-on use cases
+8. **Event Handling** - Responding to lifecycle events
+9. **Recordings** - Retrieving and managing stream recordings
+10. **TypeScript Types** - Leveraging full type safety
 
 ---
 
@@ -1049,22 +1046,7 @@ interface SimulationJobDetail extends SimulationJob {
 
 ## Practical Examples
 See examples.md
----
 
-## Summary
-
-This guide covered the essential concepts for building a virtual try-on MVP with the Odyssey SDK:
-
-1. **Installation & Setup** - Installing the package and configuring authentication
-2. **Core Architecture** - Understanding the WebRTC-based streaming model
-3. **Odyssey Class** - The main interface for all operations
-4. **React Integration** - Using the `useOdyssey` hook for React apps
-5. **Connection Lifecycle** - Managing connection states and transitions
-6. **Stream Operations** - Starting, interacting with, and ending streams
-7. **Image-to-Video** - Essential for virtual try-on use cases
-8. **Event Handling** - Responding to lifecycle events
-9. **Recordings** - Retrieving and managing stream recordings
-10. **TypeScript Types** - Leveraging full type safety
 
 ### Next Steps
 
