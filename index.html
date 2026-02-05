@@ -42,7 +42,13 @@
       position: relative;
       background: #000;
       border-radius: 4px;
-      overflow: hidden;
+      overflow: visible;
+      aspect-ratio: 704 / 1280;
+      max-height: calc(100vh - 150px);
+      max-width: 90vw;
+      width: auto;
+      height: auto;
+      margin: 0 auto;
     }
 
     .side-button {
@@ -73,8 +79,11 @@
     }
 
     video {
-      width: 28.125vh;
-      min-height: 50vh;
+      aspect-ratio: 704 / 1280;
+      max-height: calc(100vh - 150px);
+      max-width: 90vw;
+      width: auto;
+      height: auto;
       display: block;
       object-fit: contain;
       margin: 0 auto;
@@ -119,11 +128,13 @@
     }
 
     .button-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      flex-direction: column;
       gap: 10px;
-      margin-top: 15px;
-      width: 28.125vh;
+      z-index: 10;
     }
 
     .video-section {
@@ -133,27 +144,29 @@
     }
 
     .view-button {
-      aspect-ratio: 1;
+      width: 50px;
+      height: 50px;
+      max-width: 50px;
+      max-height: 50px;
       padding: 0;
-      border: 2px solid #007bff;
+      border: none;
       border-radius: 8px;
-      background: white;
-      color: #007bff;
-      font-size: 14px;
+      background: transparent;
+      font-size: 10px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
     }
 
     .view-button:hover:not(:disabled) {
-      background: #007bff;
+      background: rgba(0, 123, 255, 0.95);
       color: white;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+      transform: scale(1.05);
+      box-shadow: 0 4px 8px rgba(0, 123, 255, 0.5);
     }
 
     .view-button:active:not(:disabled) {
-      transform: translateY(0);
+      transform: scale(0.95);
     }
 
     .view-button:disabled {
@@ -161,6 +174,14 @@
       cursor: not-allowed;
       border-color: #ccc;
       color: #999;
+    }
+
+    .view-button img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      border-radius: 8px;
     }
 
     .model-selection {
@@ -234,8 +255,8 @@
       background: transparent;
       cursor: pointer;
       transition: all 0.3s;
-      width: 70px;
-      height: 70px;
+      width: 120px;
+      height: 120px;
       overflow: hidden;
     }
 
@@ -265,7 +286,6 @@
       padding: 20px;
       box-sizing: border-box;
     }
-
   </style>
 </head>
 
@@ -297,12 +317,19 @@
       <div class="video-section">
         <div class="video-container">
           <video id="video" autoplay playsinline muted></video>
-        </div>
-        <div class="button-grid">
-          <button class="view-button" id="frontBtn">Front</button>
-          <button class="view-button" id="backBtn">Back</button>
-          <button class="view-button" id="sideBtn">Side</button>
-          <button class="view-button" id="walkBtn">Walk</button>
+          <div class="button-grid">
+            <button class="view-button" id="frontBtn">
+              <img src="./assets/movement_buttons/face_forward.png" alt="face-forward">
+            </button>
+            <button class="view-button" id="backBtn">
+              <img src="./assets/movement_buttons/figure_rotating.png" alt="turn-around">
+            </button>
+            <button class="view-button" id="sideBtn">
+              <img src="./assets/movement_buttons/profile_view.png" alt="face-sidewards">
+            </button>
+
+            <!-- <button class="view-button" id="walkBtn">Walk</button> -->
+          </div>
         </div>
       </div>
     </div>
@@ -335,7 +362,7 @@
     const frontBtn = document.getElementById('frontBtn');
     const backBtn = document.getElementById('backBtn');
     const sideBtn = document.getElementById('sideBtn');
-    const walkBtn = document.getElementById('walkBtn');
+    // const walkBtn = document.getElementById('walkBtn');
     const modelSelection = document.getElementById('modelSelection');
     const videoScreen = document.getElementById('videoScreen');
     const femaleModelBtn = document.getElementById('femaleModelBtn');
@@ -357,7 +384,7 @@
 
     // ===== BUTTON STATE MANAGEMENT =====
     function updateButtonStates() {
-      const buttons = [frontBtn, backBtn, sideBtn, walkBtn];
+      const buttons = [frontBtn, backBtn, sideBtn];
       buttons.forEach(btn => {
         btn.disabled = !isStreaming;
       });
@@ -584,10 +611,10 @@
       }
     }
 
-    frontBtn.addEventListener('click', () => sendViewPrompt('person turns to face forward'));
-    backBtn.addEventListener('click', () => sendViewPrompt('person turns around to show back'));
-    sideBtn.addEventListener('click', () => sendViewPrompt('person turns to face the side'));
-    walkBtn.addEventListener('click', () => sendViewPrompt('person is walking forward'));
+    frontBtn.addEventListener('click', () => sendViewPrompt('person faces forward'));
+    backBtn.addEventListener('click', () => sendViewPrompt('person is turning around'));
+    sideBtn.addEventListener('click', () => sendViewPrompt('person faces side show body profile view'));
+    // walkBtn.addEventListener('click', () => sendViewPrompt('person is walking forward'));
 
     // ===== CONNECTION INITIALIZATION =====
     (async () => {
