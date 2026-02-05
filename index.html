@@ -27,10 +27,10 @@
     }
 
     .video-wrapper {
-      display: flex;
-      gap: 20px;
-      align-items: center;
-      justify-content: center;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 40px;
+      align-items: start;
       margin-bottom: 20px;
     }
 
@@ -118,10 +118,14 @@
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 10px;
-      margin-bottom: 20px;
-      max-width: 400px;
-      margin-left: auto;
-      margin-right: auto;
+      margin-top: 15px;
+      width: 28.125vh;
+    }
+
+    .video-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .view-button {
@@ -187,6 +191,49 @@
       border-radius: 8px;
       display: block;
     }
+
+    .left-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .shoe-buttons {
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+    }
+
+    .shoe-button {
+      border: none;
+      border-radius: 8px;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.3s;
+      width: 80px;
+      height: 80px;
+      overflow: hidden;
+    }
+
+    .shoe-button:hover {
+      border-color: #007bff;
+      transform: scale(1.05);
+      box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+    }
+
+    .shoe-button:active {
+      transform: scale(0.95);
+    }
+
+    .shoe-button img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 4px;
+      display: block;
+    }
   </style>
 </head>
 
@@ -197,10 +244,10 @@
   <div id="startScreen" class="container">
     <div class="model-selection">
       <button class="model-button" id="femaleModelBtn">
-        <img src="female_model.png" alt="Female Model">
+        <img src="./assets/female/female_model.png" alt="Female Model">
       </button>
       <button class="model-button" id="maleModelBtn">
-        <img src="male_model.png" alt="Male Model">
+        <img src="./assets/male/male_model.png" alt="Male Model">
       </button>
     </div>
   </div>
@@ -208,17 +255,34 @@
   <!-- Video Screen -->
   <div id="videoScreen" class="container" style="display: none;">
     <div class="video-wrapper">
-      <button class="side-button" id="redShirtBtn">red shirt</button>
-      <div class="video-container">
-        <video id="video" autoplay playsinline muted></video>
+      <!-- Left Column: Clothing Buttons -->
+      <div class="left-buttons">
+        <button class="side-button" id="redShirtBtn">red shirt</button>
+        <div class="shoe-buttons">
+          <button class="shoe-button" id="yellowStilettoBtn">
+            <img src="./assets/female/shoes/yellow_stilettos.png" alt="Yellow Stilettos">
+          </button>
+          <button class="shoe-button" id="blackBootsBtn">
+            <img src="./assets/female/shoes/black_boots.png" alt="Black Boots">
+          </button>
+          <button class="shoe-button" id="sandalsBtn">
+            <img src="./assets/female/shoes/sandals.png" alt="Sandals">
+          </button>
+        </div>
       </div>
-    </div>
 
-    <div class="button-grid">
-      <button class="view-button" id="frontBtn" disabled>Front</button>
-      <button class="view-button" id="backBtn" disabled>Back</button>
-      <button class="view-button" id="sideBtn" disabled>Side</button>
-      <button class="view-button" id="walkBtn" disabled>Walk</button>
+      <!-- Right Column: Video and Movement Controls -->
+      <div class="video-section">
+        <div class="video-container">
+          <video id="video" autoplay playsinline muted></video>
+        </div>
+        <div class="button-grid">
+          <button class="view-button" id="frontBtn">Front</button>
+          <button class="view-button" id="backBtn">Back</button>
+          <button class="view-button" id="sideBtn">Side</button>
+          <button class="view-button" id="walkBtn">Walk</button>
+        </div>
+      </div>
     </div>
 
     <div class="controls">
@@ -252,6 +316,9 @@
     const femaleModelBtn = document.getElementById('femaleModelBtn');
     const maleModelBtn = document.getElementById('maleModelBtn');
     const redShirtBtn = document.getElementById('redShirtBtn');
+    const yellowStilettoBtn = document.getElementById('yellowStilettoBtn');
+    const blackBootsBtn = document.getElementById('blackBootsBtn');
+    const sandalsBtn = document.getElementById('sandalsBtn');
 
     // ===== CLEAR INPUTS ON PAGE LOAD =====
     promptInput.value = '';
@@ -351,8 +418,8 @@
       }
     }
 
-    femaleModelBtn.addEventListener('click', () => selectModel('female_model.png', 'Female Model'));
-    maleModelBtn.addEventListener('click', () => selectModel('male_model.png', 'Male Model'));
+    femaleModelBtn.addEventListener('click', () => selectModel('./assets/female/female_model.png', 'Female Model'));
+    maleModelBtn.addEventListener('click', () => selectModel('./assets/male/male_model.png', 'Male Model'));
 
     // ===== RED SHIRT BUTTON HANDLER =====
     async function restartWithRedShirt() {
@@ -360,7 +427,7 @@
         console.log('Loading female_model_red.png...');
 
         // Load the red shirt model image
-        const file = await loadImageAsFile('female_model_red.png');
+        const file = await loadImageAsFile('./assets/female/female_model_red.png');
 
         // Update the uploaded image
         uploadedImage = file;
@@ -394,6 +461,49 @@
     }
 
     redShirtBtn.addEventListener('click', restartWithRedShirt);
+
+    // ===== SHOE BUTTON HANDLERS =====
+    async function changeShoes(shoesConfig) {
+      try {
+        console.log(`Loading shoe image: ${shoesConfig.file}...`);
+
+        // For shoes, we use interact() instead of restarting the stream
+        // This modifies the current stream rather than loading a new base image
+        if (!isStreaming) {
+          console.warn('No active stream to modify');
+          alert('Please start a stream first before changing shoes');
+          return;
+        }
+
+        console.log('Sending shoes prompt:', shoesConfig.prompt);
+
+        await client.interact({
+          prompt: shoesConfig.prompt
+        });
+
+        console.log('Shoes changed successfully');
+
+      } catch (error) {
+        console.error('Failed to change shoes:', error);
+        alert(`Failed to change shoes: ${error.message}`);
+      }
+    }
+
+    // Shoe button event listeners with prompts from config
+    yellowStilettoBtn.addEventListener('click', () => changeShoes({
+      file: './assets/female/shoes/yellow_stilettos.png',
+      prompt: 'woman is wearing yellow stilettos on both feet'
+    }));
+
+    blackBootsBtn.addEventListener('click', () => changeShoes({
+      file: './assets/female/shoes/black_boots.png',
+      prompt: 'woman is wearing black high ankle boots on both feet'
+    }));
+
+    sandalsBtn.addEventListener('click', () => changeShoes({
+      file: './assets/female/shoes/sandals.png',
+      prompt: 'woman is wearing female flat beige sandals on both feet'
+    }));
 
     // ===== PROMPT INPUT HANDLER =====
     promptInput.addEventListener('keydown', async (event) => {
@@ -446,10 +556,10 @@
       }
     }
 
-    frontBtn.addEventListener('click', () => sendViewPrompt('person faces the front'));
-    backBtn.addEventListener('click', () => sendViewPrompt('person faces the back'));
-    sideBtn.addEventListener('click', () => sendViewPrompt('person faces the side'));
-    walkBtn.addEventListener('click', () => sendViewPrompt('person is walking'));
+    frontBtn.addEventListener('click', () => sendViewPrompt('person turns to face forward'));
+    backBtn.addEventListener('click', () => sendViewPrompt('person turns around to show back'));
+    sideBtn.addEventListener('click', () => sendViewPrompt('person turns to face the side'));
+    walkBtn.addEventListener('click', () => sendViewPrompt('person is walking forward'));
 
     // ===== CONNECTION INITIALIZATION =====
     (async () => {

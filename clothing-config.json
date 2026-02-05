@@ -1,0 +1,28 @@
+{
+  "female": {
+    "shirts": [
+      {
+        "file": "./assets/female/female_model_red.png",
+        "prompt": "Person wearing a red shirt"
+      }
+    ],
+    "shoes": [
+      {
+        "file": "./assets/female/shoes/yellow_stilettos.png",
+        "prompt": "woman is wearing yellow stilettos"
+      },
+      {
+        "file": "./assets/female/shoes/black_boots.png",
+        "prompt": "woman is wearing black high ankle boots"
+      },
+      {
+        "file": "./assets/female/shoes/sandals.png",
+        "prompt": "woman is wearing female beige sandals"
+      }
+    ]
+  },
+  "male": {
+    "shirts": [],
+    "shoes": []
+  }
+}
