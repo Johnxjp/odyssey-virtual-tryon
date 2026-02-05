@@ -66,7 +66,7 @@
       z-index: 5;
     }
 
-    video:not([src]) ~ .loading-text,
+    video:not([src])~.loading-text,
     .video-container.loading .loading-text {
       display: block;
     }
@@ -276,6 +276,62 @@
       padding: 20px;
       box-sizing: border-box;
     }
+
+    /* Simple Modal */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+
+    .modal.hidden {
+      display: none;
+    }
+
+    .modal-content {
+      background: #1a1a1a;
+      border: 2px solid #333;
+      border-radius: 15px;
+      padding: 40px;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .modal-content h2 {
+      margin-bottom: 15px;
+      font-size: 24px;
+      color: #ccc;
+    }
+
+    .modal-content p {
+      color: #ccc;
+      margin-bottom: 25px;
+      line-height: 1.5;
+    }
+
+    .btn-primary {
+      background: white;
+      color: black;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-primary:hover {
+      background: #f0f0f0;
+      transform: scale(1.05);
+    }
   </style>
 </head>
 
@@ -326,6 +382,15 @@
     </div>
   </div>
 
+  <!-- Waiting Room Modal -->
+  <div id="waitingModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Connection In Use</h2>
+      <p>Another session is currently active. Please wait and try again.</p>
+      <button id="retryBtn" class="btn-primary">Try Again</button>
+    </div>
+  </div>
+
   <script type="module">
     import { Odyssey } from 'https://esm.sh/@odysseyml/odyssey@1.0.0';
 
@@ -362,6 +427,75 @@
     function checkAutoStart() {
       if (isConnected && hasImage && !isStreaming && uploadedImage) {
         startStream();
+      }
+    }
+
+    // ===== WAITING ROOM MODAL =====
+    function showModal() {
+      document.getElementById('waitingModal').classList.remove('hidden');
+    }
+
+    function hideModal() {
+      document.getElementById('waitingModal').classList.add('hidden');
+    }
+
+    async function retryConnection() {
+      hideModal();
+
+      try {
+        await client.connect({
+          onConnected: (mediaStream) => {
+            console.log('Connected!');
+            isConnected = true;
+            const videoEl = document.getElementById('video');
+            videoEl.srcObject = mediaStream;
+            const loadingText = document.getElementById('loadingText');
+            loadingText.textContent = 'Ready - Select a model to start';
+            checkAutoStart();
+          },
+          onStatusChange: (status, message) => {
+            console.log('Status:', status, message);
+          },
+          onStreamStarted: (streamId) => {
+            console.log('Stream started:', streamId);
+            isStreaming = true;
+            const container = document.getElementById('videoContainer');
+            container.classList.remove('loading');
+            container.classList.add('streaming');
+            updateButtonStates();
+          },
+          onStreamEnded: () => {
+            console.log('Stream ended');
+            isStreaming = false;
+            const container = document.getElementById('videoContainer');
+            container.classList.remove('streaming');
+            container.classList.add('loading');
+            updateButtonStates();
+          },
+          onError: (error, fatal) => {
+            console.error('Error:', error.message, 'Fatal:', fatal);
+            if (fatal) {
+              if (error.message.includes('concurrent') ||
+                error.message.includes('in use')) {
+                showModal();
+              } else {
+                alert(`Error: ${error.message}`);
+              }
+            }
+          },
+          onStreamError: (reason, message) => {
+            console.error('Stream error:', reason, message);
+            alert(`Stream error: ${message}`);
+          }
+        });
+      } catch (error) {
+        console.error('Retry failed:', error);
+        if (error.message.includes('concurrent') ||
+          error.message.includes('in use')) {
+          showModal();
+        } else {
+          alert(`Failed to connect: ${error.message}`);
+        }
       }
     }
 
@@ -608,7 +742,14 @@
 
           onError: (error, fatal) => {
             console.error('Error:', error.message, 'Fatal:', fatal);
-            alert(`Error: ${error.message}`);
+            if (fatal) {
+              if (error.message.includes('concurrent') ||
+                error.message.includes('in use')) {
+                showModal();
+              } else {
+                alert(`Error: ${error.message}`);
+              }
+            }
           },
 
           onStreamError: (reason, message) => {
@@ -619,9 +760,20 @@
 
       } catch (error) {
         console.error('Connection failed:', error);
-        alert(`Failed to connect: ${error.message}`);
+
+        // Check if it's a concurrent connection error
+        if (error.message.includes('concurrent') ||
+          error.message.includes('in use') ||
+          error.message.includes('already connected')) {
+          showModal();
+        } else {
+          alert(`Failed to connect: ${error.message}`);
+        }
       }
     })();
+
+    // Retry button listener
+    document.getElementById('retryBtn').addEventListener('click', retryConnection);
   </script>
 </body>
 
