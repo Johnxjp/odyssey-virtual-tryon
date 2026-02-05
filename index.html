@@ -270,11 +270,11 @@
 </head>
 
 <body>
-  <div class="home-page">
+  <div class="home-page" id="modelSelection">
     <h1>VIRTUAL TRY-ON <span style="font-size: 12px;">(Powered by Odyssey.ml)</span></h1>
 
     <!-- Model Selection -->
-    <div class="model-selection" id="modelSelection">
+    <div class="model-selection">
       <button class="model-button" id="femaleModelBtn">
         <img src="./assets/female/female_model.png" alt="Female Model">
       </button>
@@ -286,6 +286,7 @@
 
   <!-- Video Screen -->
   <div id="videoScreen" class="container" style="display: none;">
+    <h1>VIRTUAL TRY-ON <span style="font-size: 12px;">(Powered by Odyssey.ml)</span></h1>
     <div class="video-wrapper">
       <!-- Left Column: Clothing Buttons -->
       <div class="left-buttons" id="clothingGrid">
@@ -318,6 +319,7 @@
     // ===== CONFIGURATION =====
     // Replace this with your actual Odyssey API key
     const API_KEY = 'ody_sjVzTgXISZa3HdoaCBHepQsy8UrKc6Rz';
+    // const API_KEY = 'ody_';
 
     // ===== STATE VARIABLES =====
     let isConnected = false;

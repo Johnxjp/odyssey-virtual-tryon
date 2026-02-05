@@ -3,17 +3,45 @@
     "hats": [
       {
         "file": "./assets/female/hats/black_baseball_cap.png",
-        "prompt": "woman is wearing a black baseball hat. hat facing forward"
+        "prompt": "woman is wearing a black baseball hat"
+      },
+      {
+        "file": "./assets/female/hats/newsgirl_cap.png",
+        "prompt": "woman is wearing a dark green newsgirl cap."
+      },
+      {
+        "file": "./assets/female/hats/trilby_hat.png",
+        "prompt": "woman is wearing an atlantic orange trilby hat"
       }
     ],
     "tops": [
       {
-        "file": "./assets/female/female_model_red.png",
-        "prompt": "woman is wearing a red shirt"
+        "file": "./assets/female/tops/leather_jacket.png",
+        "prompt": "woman is wearing a female black leather jacket. long-sleeve. short collar"
+      },
+      {
+        "file": "./assets/female/tops/red_sleeveless_dress.png",
+        "prompt": "woman is wearing a red short summer dress. sleevless"
+      },
+      {
+        "file": "./assets/female/tops/grey_hoodie.png",
+        "prompt": "woman is wearing a grey hoodie with long-sleeves"
       }
     ],
-    "trousers": [],
-    "dresses": [],
+    "bottoms": [
+      {
+        "file": "./assets/female/bottoms/beige_trousers.png",
+        "prompt": "woman is wearing a beige straight-cut trousers"
+      },
+      {
+        "file": "./assets/female/bottoms/blue_jeans.png",
+        "prompt": "woman is wearing a baggy blue jeans, with bottoms rolled up"
+      },
+      {
+        "file": "./assets/female/bottoms/polka_dot.png",
+        "prompt": "woman is wearing a white asymetric satin skirt with black polka dots"
+      }
+    ],
     "shoes": [
       {
         "file": "./assets/female/shoes/yellow_stilettos.png",
@@ -28,7 +56,16 @@
         "prompt": "woman is wearing female beige open-top sandals"
       }
     ],
-    "accessories": []
+    "accessories": [
+      {
+        "file": "./assets/female/accessories/grey_scarf.png",
+        "prompt": "woman is wearing a grey scarf"
+      },
+      {
+        "file": "./assets/female/accessories/loveheart_sunglasses.png",
+        "prompt": "woman is wearing pink heart-shaped sunglasses with gold rim"
+      }
+    ]
   },
   "male": {
     "hats": [
